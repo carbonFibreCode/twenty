@@ -19,6 +19,7 @@ import { findFlatEntityByIdInFlatEntityMapsOrThrow } from 'src/engine/metadata-m
 import { findFlatEntityByIdInFlatEntityMaps } from 'src/engine/metadata-modules/flat-entity/utils/find-flat-entity-by-id-in-flat-entity-maps.util';
 import { ViewFilterGroupLogicalOperator } from 'src/engine/metadata-modules/view-filter-group/enums/view-filter-group-logical-operator';
 import { ViewSortDirection } from 'src/engine/metadata-modules/view-sort/enums/view-sort-direction';
+import { DEFAULT_TIMEZONE } from 'src/engine/metadata-modules/view/constants/default-timezone.constant';
 import { type ViewType } from 'src/engine/metadata-modules/view/enums/view-type.enum';
 import { ViewService } from 'src/engine/metadata-modules/view/services/view.service';
 import { GlobalWorkspaceOrmManager } from 'src/engine/twenty-orm/global-workspace-datasource/global-workspace-orm.manager';
@@ -164,8 +165,8 @@ export class ViewQueryParamsService {
     workspaceId: string,
     currentWorkspaceMemberId?: string,
   ): Promise<string> {
-    if (!currentWorkspaceMemberId) {
-      return 'UTC';
+    if (!isDefined(currentWorkspaceMemberId)) {
+      return DEFAULT_TIMEZONE;
     }
 
     try {
@@ -179,9 +180,9 @@ export class ViewQueryParamsService {
         where: { id: currentWorkspaceMemberId },
       });
 
-      return workspaceMember?.timeZone ?? 'UTC';
+      return workspaceMember?.timeZone ?? DEFAULT_TIMEZONE;
     } catch {
-      return 'UTC';
+      return DEFAULT_TIMEZONE;
     }
   }
 }

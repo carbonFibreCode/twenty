@@ -38,7 +38,7 @@ export const ObjectFilterDropdownDateInput = () => {
     useApplyObjectFilterDropdownFilterValue();
 
   const handleAbsoluteDateChange = (newPlainDate: string | null) => {
-    if (!newPlainDate) {
+    if (!isDefined(newPlainDate)) {
       applyObjectFilterDropdownFilterValue('', '');
       return;
     }

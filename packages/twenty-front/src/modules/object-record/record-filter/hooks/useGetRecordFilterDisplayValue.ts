@@ -97,7 +97,9 @@ export const useGetRecordFilterDisplayValue = () => {
           const zonedDateTime = Temporal.PlainDate.from(
             recordFilter.value,
           ).toZonedDateTime(userTimezone);
+
           const { displayValue } = getDateFilterDisplayValue(zonedDateTime);
+
           return `${displayValue}`;
         }
         case RecordFilterOperand.IS_AFTER:
