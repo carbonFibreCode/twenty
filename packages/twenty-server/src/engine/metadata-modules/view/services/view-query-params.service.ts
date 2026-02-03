@@ -16,6 +16,7 @@ import { type ObjectRecordOrderBy } from 'src/engine/api/graphql/workspace-query
 
 import { WorkspaceManyOrAllFlatEntityMapsCacheService } from 'src/engine/metadata-modules/flat-entity/services/workspace-many-or-all-flat-entity-maps-cache.service';
 import { findFlatEntityByIdInFlatEntityMapsOrThrow } from 'src/engine/metadata-modules/flat-entity/utils/find-flat-entity-by-id-in-flat-entity-maps-or-throw.util';
+import { findFlatEntityByIdInFlatEntityMaps } from 'src/engine/metadata-modules/flat-entity/utils/find-flat-entity-by-id-in-flat-entity-maps.util';
 import { ViewFilterGroupLogicalOperator } from 'src/engine/metadata-modules/view-filter-group/enums/view-filter-group-logical-operator';
 import { ViewSortDirection } from 'src/engine/metadata-modules/view-sort/enums/view-sort-direction';
 import { type ViewType } from 'src/engine/metadata-modules/view/enums/view-type.enum';
@@ -70,7 +71,10 @@ export class ViewQueryParamsService {
 
     const recordFilters: RecordFilter[] = (view.viewFilters ?? [])
       .map((viewFilter) => {
-        const field = flatFieldMetadataMaps.byId[viewFilter.fieldMetadataId];
+        const field = findFlatEntityByIdInFlatEntityMaps({
+          flatEntityId: viewFilter.fieldMetadataId,
+          flatEntityMaps: flatFieldMetadataMaps,
+        });
 
         if (!field) return null;
 
@@ -99,7 +103,10 @@ export class ViewQueryParamsService {
 
     const fields = recordFilters
       .map((filter) => {
-        const field = flatFieldMetadataMaps.byId[filter.fieldMetadataId];
+        const field = findFlatEntityByIdInFlatEntityMaps({
+          flatEntityId: filter.fieldMetadataId,
+          flatEntityMaps: flatFieldMetadataMaps,
+        });
 
         if (!field) return null;
 
@@ -128,7 +135,10 @@ export class ViewQueryParamsService {
 
     const orderBy: ObjectRecordOrderBy = (view.viewSorts ?? [])
       .map((sort) => {
-        const field = flatFieldMetadataMaps.byId[sort.fieldMetadataId];
+        const field = findFlatEntityByIdInFlatEntityMaps({
+          flatEntityId: sort.fieldMetadataId,
+          flatEntityMaps: flatFieldMetadataMaps,
+        });
 
         if (!field) return null;
 
