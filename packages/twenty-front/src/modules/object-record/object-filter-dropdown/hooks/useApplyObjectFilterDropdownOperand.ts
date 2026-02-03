@@ -112,12 +112,8 @@ export const useApplyObjectFilterDropdownOperand = () => {
           recordFilterToUpsert.type === 'DATE_TIME' &&
           !filterValueIsEmpty &&
           !isStillRelativeFilterValue.success &&
-          ((previousOperand === RecordFilterOperand.IS &&
-            (newOperand === RecordFilterOperand.IS_BEFORE ||
-              newOperand === RecordFilterOperand.IS_AFTER)) ||
-            ((previousOperand === RecordFilterOperand.IS_BEFORE ||
-              previousOperand === RecordFilterOperand.IS_AFTER) &&
-              newOperand === RecordFilterOperand.IS));
+          (previousOperand === RecordFilterOperand.IS ||
+            newOperand === RecordFilterOperand.IS);
 
         if (isDateTimeOperandFormatChange) {
           recordFilterToUpsert.value = convertDateTimeFilterValue(
