@@ -9,6 +9,7 @@ import { ViewType } from 'src/engine/metadata-modules/view/enums/view-type.enum'
 import { ViewVisibility } from 'src/engine/metadata-modules/view/enums/view-visibility.enum';
 import { ViewQueryParamsService } from 'src/engine/metadata-modules/view/services/view-query-params.service';
 import { ViewService } from 'src/engine/metadata-modules/view/services/view.service';
+import { GlobalWorkspaceOrmManager } from 'src/engine/twenty-orm/global-workspace-datasource/global-workspace-orm.manager';
 
 describe('ViewQueryParamsService', () => {
   let viewQueryParamsService: ViewQueryParamsService;
@@ -68,6 +69,12 @@ describe('ViewQueryParamsService', () => {
           provide: WorkspaceManyOrAllFlatEntityMapsCacheService,
           useValue: {
             getOrRecomputeManyOrAllFlatEntityMaps: jest.fn(),
+          },
+        },
+        {
+          provide: GlobalWorkspaceOrmManager,
+          useValue: {
+            getRepository: jest.fn(),
           },
         },
       ],
