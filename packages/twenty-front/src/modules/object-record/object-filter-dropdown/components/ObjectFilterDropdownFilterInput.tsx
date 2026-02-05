@@ -1,4 +1,5 @@
 import { ObjectFilterDropdownDateInput } from '@/object-record/object-filter-dropdown/components/ObjectFilterDropdownDateInput';
+import { useFeatureFlagsMap } from '@/workspace/hooks/useFeatureFlagsMap';
 import { ObjectFilterDropdownNumberInput } from '@/object-record/object-filter-dropdown/components/ObjectFilterDropdownNumberInput';
 import { ObjectFilterDropdownOptionSelect } from '@/object-record/object-filter-dropdown/components/ObjectFilterDropdownOptionSelect';
 import { ObjectFilterDropdownRatingInput } from '@/object-record/object-filter-dropdown/components/ObjectFilterDropdownRatingInput';
@@ -28,6 +29,10 @@ export const ObjectFilterDropdownFilterInput = ({
   filterDropdownId,
   recordFilterId,
 }: ObjectFilterDropdownFilterInputProps) => {
+  const featureFlags = useFeatureFlagsMap();
+  const isWholeDayFilterEnabled =
+    featureFlags.IS_DATE_TIME_WHOLE_DAY_FILTER_ENABLED ?? false;
+
   const fieldMetadataItemUsedInDropdown = useRecoilComponentValue(
     fieldMetadataItemUsedInDropdownComponentSelector,
   );
@@ -76,7 +81,10 @@ export const ObjectFilterDropdownFilterInput = ({
       </>
     );
   } else if (filterType === 'DATE_TIME') {
-    if (selectedOperandInDropdown === ViewFilterOperand.IS) {
+    if (
+      isWholeDayFilterEnabled &&
+      selectedOperandInDropdown === ViewFilterOperand.IS
+    ) {
       return (
         <>
           <ObjectFilterDropdownInnerSelectOperandDropdown />
