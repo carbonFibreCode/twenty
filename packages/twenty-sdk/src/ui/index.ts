@@ -1,12 +1,3 @@
-/*
- * _____                    _
- *|_   _|_      _____ _ __ | |_ _   _
- *  | | \ \ /\ / / _ \ '_ \| __| | | | Auto-generated file
- *  | |  \ V  V /  __/ | | | |_| |_| | Any edits to this will be overridden
- *  |_|   \_/\_/ \___|_| |_|\__|\__, |
- *                              |___/
- */
-
 export * from 'twenty-ui';
 export * from 'twenty-ui/accessibility';
 export * from 'twenty-ui/components';
@@ -18,3 +9,7 @@ export * from 'twenty-ui/layout';
 export * from 'twenty-ui/navigation';
 export * from 'twenty-ui/theme';
 export * from 'twenty-ui/utilities';
+
+// Re-export Emotion's ThemeProvider so front components can wrap
+// their content with the Twenty UI theme without a direct @emotion/react dependency
+export { ThemeProvider } from '@emotion/react';

@@ -189,7 +189,6 @@ const createDefaultFunction = async ({
   fileName: string;
 }) => {
   const universalIdentifier = v4();
-  const triggerUniversalIdentifier = v4();
 
   const content = `import { defineLogicFunction } from 'twenty-sdk';
 
@@ -204,15 +203,11 @@ export default defineLogicFunction({
   description: 'A simple logic function',
   timeoutSeconds: 5,
   handler,
-  triggers: [
-    {
-      universalIdentifier: '${triggerUniversalIdentifier}',
-      type: 'route',
-      path: '/hello-world-logic-function',
-      httpMethod: 'GET',
-      isAuthRequired: false,
-    },
-  ],
+  httpRouteTriggerSettings: {
+    path: '/hello-world-logic-function',
+    httpMethod: 'GET',
+    isAuthRequired: false,
+  },
 });
 `;
 
@@ -266,23 +261,12 @@ const createPackageJson = async ({
     },
     packageManager: 'yarn@4.9.2',
     scripts: {
-      'auth:login': 'twenty auth:login',
-      'auth:logout': 'twenty auth:logout',
-      'auth:status': 'twenty auth:status',
-      'auth:switch': 'twenty auth:switch',
-      'auth:list': 'twenty auth:list',
-      'app:dev': 'twenty app:dev',
-      'entity:add': 'twenty entity:add',
-      'app:generate': 'twenty app:generate',
-      'function:logs': 'twenty function:logs',
-      'function:execute': 'twenty function:execute',
-      'app:uninstall': 'twenty app:uninstall',
-      help: 'twenty help',
+      twenty: 'twenty',
       lint: 'eslint',
       'lint:fix': 'eslint --fix',
     },
     dependencies: {
-      'twenty-sdk': '0.4.3',
+      'twenty-sdk': 'latest',
     },
     devDependencies: {
       typescript: '^5.9.3',

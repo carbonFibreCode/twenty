@@ -1,11 +1,10 @@
-import { HttpService } from '@nestjs/axios';
 import { Injectable } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 
 import { msg } from '@lingui/core/macro';
 import { TWENTY_ICONS_BASE_URL } from 'twenty-shared/constants';
 import { WorkspaceActivationStatus } from 'twenty-shared/workspace';
-import { type DataSource, type QueryRunner, Repository } from 'typeorm';
+import { Repository, type DataSource, type QueryRunner } from 'typeorm';
 import { v4 } from 'uuid';
 
 import { USER_SIGNUP_EVENT_NAME } from 'src/engine/api/graphql/workspace-query-runner/constants/user-signup-event-name.constants';
@@ -31,6 +30,7 @@ import { SubdomainManagerService } from 'src/engine/core-modules/domain/subdomai
 import { MetricsService } from 'src/engine/core-modules/metrics/metrics.service';
 import { MetricsKeys } from 'src/engine/core-modules/metrics/types/metrics-keys.type';
 import { OnboardingService } from 'src/engine/core-modules/onboarding/onboarding.service';
+import { SecureHttpClientService } from 'src/engine/core-modules/secure-http-client/secure-http-client.service';
 import { TwentyConfigService } from 'src/engine/core-modules/twenty-config/twenty-config.service';
 import { UserWorkspaceService } from 'src/engine/core-modules/user-workspace/user-workspace.service';
 import { UserService } from 'src/engine/core-modules/user/services/user.service';
@@ -55,7 +55,7 @@ export class SignInUpService {
     private readonly userWorkspaceService: UserWorkspaceService,
     private readonly onboardingService: OnboardingService,
     private readonly workspaceEventEmitter: WorkspaceEventEmitter,
-    private readonly httpService: HttpService,
+    private readonly secureHttpClientService: SecureHttpClientService,
     private readonly twentyConfigService: TwentyConfigService,
     private readonly subdomainManagerService: SubdomainManagerService,
     private readonly userService: UserService,
@@ -379,53 +379,66 @@ export class SignInUpService {
     return savedUser;
   }
 
-  private async setDefaultImpersonateAndAccessFullAdminPanel() {
-    if (!this.twentyConfigService.get('IS_MULTIWORKSPACE_ENABLED')) {
-      const workspacesCount = await this.workspaceRepository.count();
+  private async isSignUpEnabled(): Promise<boolean> {
+    const workspaceCount = await this.workspaceRepository.count();
 
-      // let the creation of the first workspace
-      if (workspacesCount > 0) {
-        throw new AuthException(
-          'New workspace setup is disabled',
-          AuthExceptionCode.SIGNUP_DISABLED,
-        );
-      }
-
-      return { canImpersonate: true, canAccessFullAdminPanel: true };
-    }
-
-    return { canImpersonate: false, canAccessFullAdminPanel: false };
-  }
-
-  private isWorkspaceCreationLimitedToServerAdmins(): boolean {
-    return this.twentyConfigService.get(
-      'IS_WORKSPACE_CREATION_LIMITED_TO_SERVER_ADMINS',
+    return (
+      this.twentyConfigService.get('IS_MULTIWORKSPACE_ENABLED') ||
+      workspaceCount === 0
     );
   }
 
-  private async isFirstWorkspaceInSystem(): Promise<boolean> {
-    const count = await this.workspaceRepository.count();
-
-    return count === 0;
-  }
-
-  async checkWorkspaceCreationIsAllowedOrThrow(
-    currentUser: UserEntity,
-  ): Promise<void> {
-    if (!this.isWorkspaceCreationLimitedToServerAdmins()) return;
-
-    // Only allow bypass during initial system bootstrap (no workspaces exist yet)
-    if (await this.isFirstWorkspaceInSystem()) return;
-
-    if (!currentUser.canAccessFullAdminPanel) {
+  private async assertSignUpEnabled(): Promise<void> {
+    if (!(await this.isSignUpEnabled())) {
       throw new AuthException(
-        'Workspace creation is restricted to admins',
-        AuthExceptionCode.FORBIDDEN_EXCEPTION,
-        {
-          userFriendlyMessage: msg`Workspace creation is restricted to admins`,
-        },
+        'New workspace setup is disabled',
+        AuthExceptionCode.SIGNUP_DISABLED,
       );
     }
+  }
+
+  private async hasServerAdmin(): Promise<boolean> {
+    const adminCount = await this.userRepository.count({
+      where: { canAccessFullAdminPanel: true },
+    });
+
+    return adminCount > 0;
+  }
+
+  private async assertWorkspaceCreationAllowed(
+    userData: ExistingUserOrPartialUserWithPicture['userData'],
+  ): Promise<void> {
+    await this.assertSignUpEnabled();
+
+    const workspaceCount = await this.workspaceRepository.count();
+
+    if (workspaceCount === 0) {
+      return;
+    }
+
+    if (
+      !this.twentyConfigService.get(
+        'IS_WORKSPACE_CREATION_LIMITED_TO_SERVER_ADMINS',
+      )
+    ) {
+      return;
+    }
+
+    const isExistingAdmin =
+      userData.type === 'existingUser' &&
+      userData.existingUser.canAccessFullAdminPanel;
+
+    if (isExistingAdmin) {
+      return;
+    }
+
+    throw new AuthException(
+      'Workspace creation is restricted to admins',
+      AuthExceptionCode.FORBIDDEN_EXCEPTION,
+      {
+        userFriendlyMessage: msg`Workspace creation is restricted to admins`,
+      },
+    );
   }
 
   async signUpOnNewWorkspace(
@@ -446,35 +459,17 @@ export class SignInUpService {
       );
     }
 
-    if (
-      this.isWorkspaceCreationLimitedToServerAdmins() &&
-      !(await this.isFirstWorkspaceInSystem())
-    ) {
-      const isExistingAdmin =
-        userData.type === 'existingUser' &&
-        userData.existingUser.canAccessFullAdminPanel;
+    await this.assertWorkspaceCreationAllowed(userData);
 
-      if (!isExistingAdmin) {
-        throw new AuthException(
-          'Workspace creation is restricted to admins',
-          AuthExceptionCode.FORBIDDEN_EXCEPTION,
-          {
-            userFriendlyMessage: msg`Workspace creation is restricted to admins`,
-          },
-        );
-      }
-    }
-
-    const { canImpersonate, canAccessFullAdminPanel } =
-      await this.setDefaultImpersonateAndAccessFullAdminPanel();
+    const shouldGrantServerAdmin = !(await this.hasServerAdmin());
 
     const logoUrl = `${TWENTY_ICONS_BASE_URL}/${getDomainNameByEmail(email)}`;
     const isLogoUrlValid = async () => {
       try {
-        return (
-          (await this.httpService.axiosRef.get(logoUrl, { timeout: 600 }))
-            .status === 200
-        );
+        const httpClient = this.secureHttpClientService.getHttpClient();
+        const response = await httpClient.get(logoUrl, { timeout: 600 });
+
+        return response.status === 200;
       } catch {
         return false;
       }
@@ -523,8 +518,8 @@ export class SignInUpService {
         : await this.saveNewUser(
             userData.newUserWithPicture,
             {
-              canImpersonate,
-              canAccessFullAdminPanel,
+              canImpersonate: shouldGrantServerAdmin,
+              canAccessFullAdminPanel: shouldGrantServerAdmin,
             },
             queryRunner,
           );
@@ -584,9 +579,16 @@ export class SignInUpService {
       );
     }
 
+    await this.assertSignUpEnabled();
+
+    const shouldGrantServerAdmin = !(await this.hasServerAdmin());
+
     return this.saveNewUser(
       await this.computePartialUserFromUserPayload(newUserParams, authParams),
-      await this.setDefaultImpersonateAndAccessFullAdminPanel(),
+      {
+        canImpersonate: shouldGrantServerAdmin,
+        canAccessFullAdminPanel: shouldGrantServerAdmin,
+      },
     );
   }
 }

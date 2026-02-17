@@ -15,9 +15,21 @@ export const computeStandardWorkflowRunViews = (
       objectName: 'workflowRun',
       context: {
         viewName: 'allWorkflowRuns',
-        name: 'All Workflow Runs',
+        name: 'Runs',
         type: ViewType.TABLE,
         key: ViewKey.INDEX,
+        position: 0,
+        icon: 'IconPlayerPlay',
+      },
+    }),
+    workflowRunRecordPageFields: createStandardViewFlatMetadata({
+      ...args,
+      objectName: 'workflowRun',
+      context: {
+        viewName: 'workflowRunRecordPageFields',
+        name: 'Workflow Run Record Page Fields',
+        type: ViewType.FIELDS_WIDGET,
+        key: null,
         position: 0,
         icon: 'IconList',
       },

@@ -1,11 +1,13 @@
 import { useRecoilState, useRecoilValue, useSetRecoilState } from 'recoil';
 
 import { useGetBrowsingContext } from '@/ai/hooks/useBrowsingContext';
+import { agentChatInputState } from '@/ai/states/agentChatInputState';
 import { agentChatSelectedFilesState } from '@/ai/states/agentChatSelectedFilesState';
 import { agentChatUploadedFilesState } from '@/ai/states/agentChatUploadedFilesState';
 import { agentChatUsageState } from '@/ai/states/agentChatUsageState';
 import { currentAIChatThreadState } from '@/ai/states/currentAIChatThreadState';
-
+import { currentAIChatThreadTitleState } from '@/ai/states/currentAIChatThreadTitleState';
+import { REST_API_BASE_URL } from '@/apollo/constant/rest-api-base-url';
 import { getTokenPair } from '@/apollo/utils/getTokenPair';
 import { renewToken } from '@/auth/services/AuthService';
 import { tokenPairState } from '@/auth/states/tokenPairState';
@@ -15,14 +17,15 @@ import { type ExtendedUIMessage } from 'twenty-shared/ai';
 import { isDefined } from 'twenty-shared/utils';
 import { REACT_APP_SERVER_BASE_URL } from '~/config';
 import { cookieStorage } from '~/utils/cookie-storage';
-import { REST_API_BASE_URL } from '@/apollo/constant/rest-api-base-url';
-import { agentChatInputState } from '@/ai/states/agentChatInputState';
 
 export const useAgentChat = (uiMessages: ExtendedUIMessage[]) => {
   const setTokenPair = useSetRecoilState(tokenPairState);
   const setAgentChatUsage = useSetRecoilState(agentChatUsageState);
 
   const { getBrowsingContext } = useGetBrowsingContext();
+  const setCurrentAIChatThreadTitle = useSetRecoilState(
+    currentAIChatThreadTitleState,
+  );
 
   const agentChatSelectedFiles = useRecoilValue(agentChatSelectedFilesState);
 
@@ -47,7 +50,7 @@ export const useAgentChat = (uiMessages: ExtendedUIMessage[]) => {
 
     try {
       const renewedTokens = await renewToken(
-        `${REACT_APP_SERVER_BASE_URL}/graphql`,
+        `${REACT_APP_SERVER_BASE_URL}/metadata`,
         tokenPair,
       );
 
@@ -80,7 +83,7 @@ export const useAgentChat = (uiMessages: ExtendedUIMessage[]) => {
     }
   };
 
-  const { sendMessage, messages, status, error, regenerate } = useChat({
+  const { sendMessage, messages, status, error, regenerate, stop } = useChat({
     transport: new DefaultChatTransport({
       api: `${REST_API_BASE_URL}/agent-chat/stream`,
       headers: () => ({
@@ -119,8 +122,10 @@ export const useAgentChat = (uiMessages: ExtendedUIMessage[]) => {
       type UsageMetadata = {
         inputTokens: number;
         outputTokens: number;
+        cachedInputTokens: number;
         inputCredits: number;
         outputCredits: number;
+        conversationSize: number;
       };
       type ModelMetadata = {
         contextWindowTokens: number;
@@ -133,14 +138,28 @@ export const useAgentChat = (uiMessages: ExtendedUIMessage[]) => {
 
       if (isDefined(usage) && isDefined(model)) {
         setAgentChatUsage((prev) => ({
+          lastMessage: {
+            inputTokens: usage.inputTokens,
+            outputTokens: usage.outputTokens,
+            cachedInputTokens: usage.cachedInputTokens,
+            inputCredits: usage.inputCredits,
+            outputCredits: usage.outputCredits,
+          },
+          conversationSize: usage.conversationSize,
+          contextWindowTokens: model.contextWindowTokens,
           inputTokens: (prev?.inputTokens ?? 0) + usage.inputTokens,
           outputTokens: (prev?.outputTokens ?? 0) + usage.outputTokens,
-          totalTokens:
-            (prev?.totalTokens ?? 0) + usage.inputTokens + usage.outputTokens,
-          contextWindowTokens: model.contextWindowTokens,
           inputCredits: (prev?.inputCredits ?? 0) + usage.inputCredits,
           outputCredits: (prev?.outputCredits ?? 0) + usage.outputCredits,
         }));
+      }
+
+      const titlePart = message.parts.find(
+        (part) => part.type === 'data-thread-title',
+      );
+
+      if (isDefined(titlePart) && titlePart.type === 'data-thread-title') {
+        setCurrentAIChatThreadTitle(titlePart.data.title);
       }
     },
   });
@@ -177,6 +196,7 @@ export const useAgentChat = (uiMessages: ExtendedUIMessage[]) => {
   return {
     messages,
     handleSendMessage,
+    handleStop: stop,
     isLoading,
     isStreaming,
     error,

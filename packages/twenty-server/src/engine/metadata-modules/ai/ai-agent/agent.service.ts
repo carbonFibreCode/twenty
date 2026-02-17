@@ -106,6 +106,12 @@ export class AgentService {
     input: CreateAgentInput & { isCustom: boolean },
     workspaceId: string,
   ): Promise<FlatAgentWithRoleId> {
+    const { flatApplicationMaps, flatRoleMaps } =
+      await this.workspaceCacheService.getOrRecompute(workspaceId, [
+        'flatApplicationMaps',
+        'flatRoleMaps',
+      ]);
+
     const { workspaceCustomFlatApplication } =
       await this.applicationService.findWorkspaceTwentyStandardAndCustomApplicationOrThrow(
         {
@@ -113,14 +119,19 @@ export class AgentService {
         },
       );
 
+    const flatApplication = isDefined(input.applicationId)
+      ? flatApplicationMaps.byId[input.applicationId]
+      : undefined;
+
+    const resolvedFlatApplication =
+      flatApplication ?? workspaceCustomFlatApplication;
+
     const { flatAgentToCreate, flatRoleTargetToCreate } =
       fromCreateAgentInputToFlatAgent({
-        createAgentInput: {
-          ...input,
-          applicationId:
-            input.applicationId ?? workspaceCustomFlatApplication.id,
-        },
+        createAgentInput: input,
         workspaceId,
+        flatApplication: resolvedFlatApplication,
+        flatRoleMaps,
       });
 
     const validateAndBuildResult =
@@ -147,7 +158,7 @@ export class AgentService {
         },
       );
 
-    if (isDefined(validateAndBuildResult)) {
+    if (validateAndBuildResult.status === 'fail') {
       throw new WorkspaceMigrationBuilderException(
         validateAndBuildResult,
         'Multiple validation errors occurred while creating agent',
@@ -184,10 +195,11 @@ export class AgentService {
         },
       );
 
-    const { flatRoleTargetByAgentIdMaps, flatAgentMaps } =
+    const { flatRoleTargetByAgentIdMaps, flatAgentMaps, flatRoleMaps } =
       await this.workspaceCacheService.getOrRecompute(workspaceId, [
         'flatRoleTargetByAgentIdMaps',
         'flatAgentMaps',
+        'flatRoleMaps',
       ]);
 
     const {
@@ -199,6 +211,7 @@ export class AgentService {
       updateAgentInput: input,
       flatAgentMaps,
       flatRoleTargetByAgentIdMaps,
+      flatRoleMaps,
     });
 
     const validateAndBuildResult =
@@ -229,7 +242,7 @@ export class AgentService {
         },
       );
 
-    if (isDefined(validateAndBuildResult)) {
+    if (validateAndBuildResult.status === 'fail') {
       throw new WorkspaceMigrationBuilderException(
         validateAndBuildResult,
         'Multiple validation errors occurred while updating agent',
@@ -344,7 +357,7 @@ export class AgentService {
         },
       );
 
-    if (isDefined(validateAndBuildResult)) {
+    if (validateAndBuildResult.status === 'fail') {
       throw new WorkspaceMigrationBuilderException(
         validateAndBuildResult,
         `Multiple validation errors occurred while deleting agent${ids.length > 1 ? 's' : ''}`,
