@@ -14,6 +14,7 @@ import { useRecoilComponentValue } from '@/ui/utilities/state/component-state/ho
 import { useSetRecoilComponentState } from '@/ui/utilities/state/component-state/hooks/useSetRecoilComponentState';
 import { stringifyRelativeDateFilter } from '@/views/view-filter-value/utils/stringifyRelativeDateFilter';
 
+import { useFeatureFlagsMap } from '@/workspace/hooks/useFeatureFlagsMap';
 import { DEFAULT_RELATIVE_DATE_FILTER_VALUE } from 'twenty-shared/constants';
 import {
   isDefined,
@@ -46,6 +47,10 @@ export const useApplyObjectFilterDropdownOperand = () => {
 
   const { getRelativeDateFilterWithUserTimezone } =
     useGetRelativeDateFilterWithUserTimezone();
+
+  const featureFlags = useFeatureFlagsMap();
+  const isWholeDayFilterEnabled =
+    featureFlags.IS_DATE_TIME_WHOLE_DAY_FILTER_ENABLED ?? false;
 
   const applyObjectFilterDropdownOperand = (
     newOperand: RecordFilterOperand,
@@ -131,7 +136,10 @@ export const useApplyObjectFilterDropdownOperand = () => {
 
             recordFilterToUpsert.value = initialNowDateFilterValue;
           } else {
-            if (newOperand === RecordFilterOperand.IS) {
+            if (
+              newOperand === RecordFilterOperand.IS &&
+              isWholeDayFilterEnabled
+            ) {
               recordFilterToUpsert.value = zonedDateToUse
                 .toPlainDate()
                 .toString();

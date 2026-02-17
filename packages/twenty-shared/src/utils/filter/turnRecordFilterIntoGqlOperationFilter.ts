@@ -392,8 +392,20 @@ export const turnRecordFilterIntoRecordGqlOperationFilter = ({
 
         if (recordFilter.operand === RecordFilterOperand.IS) {
           const timeZone = filterValueDependencies.timeZone ?? 'UTC';
-          const plainDate = Temporal.PlainDate.from(recordFilter.value);
-          const zonedDateTime = plainDate.toZonedDateTime(timeZone);
+
+          let parsedPlainDate = null;
+
+          try {
+            parsedPlainDate = recordFilter.value.includes('T')
+              ? Temporal.Instant.from(recordFilter.value)
+                  .toZonedDateTimeISO(timeZone)
+                  .toPlainDate()
+              : Temporal.PlainDate.from(recordFilter.value);
+          } catch {
+            return {};
+          }
+
+          const zonedDateTime = parsedPlainDate.toZonedDateTime(timeZone);
           const start = zonedDateTime.toInstant();
           const end = zonedDateTime.add({ days: 1 }).toInstant();
 
