@@ -12,7 +12,11 @@ import { FeatureFlagService } from 'src/engine/core-modules/feature-flag/service
 import { WorkspaceEntity } from 'src/engine/core-modules/workspace/workspace.entity';
 import { DataSourceService } from 'src/engine/metadata-modules/data-source/data-source.service';
 import { ViewFilterEntity } from 'src/engine/metadata-modules/view-filter/entities/view-filter.entity';
+import { WorkspaceMetadataVersionService } from 'src/engine/metadata-modules/workspace-metadata-version/services/workspace-metadata-version.service';
 import { GlobalWorkspaceOrmManager } from 'src/engine/twenty-orm/global-workspace-datasource/global-workspace-orm.manager';
+import { WorkspaceCacheStorageService } from 'src/engine/workspace-cache-storage/workspace-cache-storage.service';
+import { WorkspaceCacheService } from 'src/engine/workspace-cache/services/workspace-cache.service';
+import { WorkspaceCacheKeyName } from 'src/engine/workspace-cache/types/workspace-cache-key.type';
 
 @Command({
   name: 'upgrade:1-17:migrate-date-time-is-filter-values',
@@ -32,6 +36,9 @@ export class MigrateDateTimeIsFilterValuesCommand extends ActiveOrSuspendedWorks
     @InjectRepository(ViewFilterEntity)
     private readonly viewFilterRepository: Repository<ViewFilterEntity>,
     private readonly featureFlagService: FeatureFlagService,
+    private readonly workspaceCacheService: WorkspaceCacheService,
+    private readonly workspaceMetadataVersionService: WorkspaceMetadataVersionService,
+    private readonly workspaceCacheStorageService: WorkspaceCacheStorageService,
   ) {
     super(workspaceRepository, globalWorkspaceOrmManager, dataSourceService);
   }
@@ -49,6 +56,7 @@ export class MigrateDateTimeIsFilterValuesCommand extends ActiveOrSuspendedWorks
         workspaceId,
       },
       relations: ['fieldMetadata'],
+      withDeleted: true,
     });
 
     const filtersToUpdate = viewFilters.filter((filter) => {
@@ -121,5 +129,26 @@ export class MigrateDateTimeIsFilterValuesCommand extends ActiveOrSuspendedWorks
     this.logger.log(
       `Enabled IS_DATE_TIME_WHOLE_DAY_FILTER_ENABLED for workspace ${workspaceId}`,
     );
+
+    const cacheKeysToInvalidate: WorkspaceCacheKeyName[] = [
+      'flatViewFilterMaps',
+    ];
+
+    this.logger.log(`Invalidating caches: ${cacheKeysToInvalidate.join(' ')}`);
+
+    await this.workspaceCacheService.invalidateAndRecompute(
+      workspaceId,
+      cacheKeysToInvalidate,
+    );
+
+    await this.workspaceMetadataVersionService.incrementMetadataVersion(
+      workspaceId,
+    );
+
+    this.logger.log(`Cache flushed`);
+
+    this.logger.log(`Flush cache for workspace ${workspaceId}`);
+
+    await this.workspaceCacheStorageService.flush(workspaceId);
   }
 }
