@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { relative } from 'path';
 import { type Manifest, OUTPUT_DIR } from 'twenty-shared/application';
 import { FileFolder } from 'twenty-shared/types';
@@ -78,7 +79,7 @@ export const manifestUpdateChecksums = ({
       };
     }
 
-    if (fileFolder === FileFolder.Source) {
+    if (fileFolder === FileFolder.Dependencies) {
       if (rootBuiltPath === 'package.json') {
         result.application.packageJsonChecksum = checksum;
       }
@@ -88,5 +89,30 @@ export const manifestUpdateChecksums = ({
       }
     }
   }
+
+  const apiClientChecksums: string[] = [];
+
+  for (const [builtPath, { fileFolder }] of builtFileInfos.entries()) {
+    const rootBuiltPath = relative(OUTPUT_DIR, builtPath);
+
+    if (
+      fileFolder === FileFolder.Dependencies &&
+      rootBuiltPath.startsWith('api-client/')
+    ) {
+      const entry = builtFileInfos.get(builtPath);
+
+      if (entry) {
+        apiClientChecksums.push(entry.checksum);
+      }
+    }
+  }
+
+  if (apiClientChecksums.length > 0) {
+    result.application.apiClientChecksum = crypto
+      .createHash('md5')
+      .update(apiClientChecksums.sort().join(''))
+      .digest('hex');
+  }
+
   return result;
 };

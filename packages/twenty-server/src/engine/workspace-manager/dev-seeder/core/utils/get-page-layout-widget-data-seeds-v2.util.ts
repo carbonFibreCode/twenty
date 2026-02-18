@@ -1,8 +1,11 @@
 import { CalendarStartDay } from 'twenty-shared/constants';
-import { isDefined } from 'twenty-shared/utils';
 import { STANDARD_OBJECTS } from 'twenty-shared/metadata';
+import {
+  AggregateOperations,
+  PageLayoutTabLayoutMode,
+} from 'twenty-shared/types';
+import { isDefined } from 'twenty-shared/utils';
 
-import { AggregateOperations } from 'src/engine/api/graphql/graphql-query-runner/constants/aggregate-operations.constant';
 import { type ObjectMetadataEntity } from 'src/engine/metadata-modules/object-metadata/object-metadata.entity';
 import { AxisNameDisplay } from 'src/engine/metadata-modules/page-layout-widget/enums/axis-name-display.enum';
 import { GraphOrderBy } from 'src/engine/metadata-modules/page-layout-widget/enums/graph-order-by.enum';
@@ -69,6 +72,13 @@ export const getPageLayoutWidgetDataSeedsV2 = (
           title: 'Revenue Forecast',
           type: WidgetType.GRAPH,
           gridPosition: { row: 0, column: 7, rowSpan: 8, columnSpan: 5 },
+          position: {
+            layoutMode: PageLayoutTabLayoutMode.GRID,
+            row: 0,
+            column: 7,
+            rowSpan: 8,
+            columnSpan: 5,
+          },
           configuration: {
             configurationType: WidgetConfigurationType.LINE_CHART,
             aggregateFieldMetadataId: opportunityAmountFieldId,
@@ -98,6 +108,13 @@ export const getPageLayoutWidgetDataSeedsV2 = (
           title: 'New Customers Over Time',
           type: WidgetType.GRAPH,
           gridPosition: { row: 0, column: 3, rowSpan: 6, columnSpan: 5 },
+          position: {
+            layoutMode: PageLayoutTabLayoutMode.GRID,
+            row: 0,
+            column: 3,
+            rowSpan: 6,
+            columnSpan: 5,
+          },
           configuration: {
             configurationType: WidgetConfigurationType.LINE_CHART,
             aggregateFieldMetadataId: companyIdFieldId,
@@ -127,6 +144,13 @@ export const getPageLayoutWidgetDataSeedsV2 = (
           title: 'Revenue Distribution',
           type: WidgetType.GRAPH,
           gridPosition: { row: 0, column: 4, rowSpan: 2, columnSpan: 3 },
+          position: {
+            layoutMode: PageLayoutTabLayoutMode.GRID,
+            row: 0,
+            column: 4,
+            rowSpan: 2,
+            columnSpan: 3,
+          },
           configuration: {
             configurationType: WidgetConfigurationType.PIE_CHART,
             aggregateFieldMetadataId: companyArrFieldId,
@@ -155,6 +179,13 @@ export const getPageLayoutWidgetDataSeedsV2 = (
           title: 'Average ARR',
           type: WidgetType.GRAPH,
           gridPosition: { row: 0, column: 7, rowSpan: 6, columnSpan: 5 },
+          position: {
+            layoutMode: PageLayoutTabLayoutMode.GRID,
+            row: 0,
+            column: 7,
+            rowSpan: 6,
+            columnSpan: 5,
+          },
           configuration: {
             configurationType: WidgetConfigurationType.GAUGE_CHART,
             aggregateFieldMetadataId: companyArrFieldId,
@@ -181,6 +212,13 @@ export const getPageLayoutWidgetDataSeedsV2 = (
           title: 'Companies by LinkedIn (Field Permission Test)',
           type: WidgetType.GRAPH,
           gridPosition: { row: 6, column: 0, rowSpan: 4, columnSpan: 6 },
+          position: {
+            layoutMode: PageLayoutTabLayoutMode.GRID,
+            row: 6,
+            column: 0,
+            rowSpan: 4,
+            columnSpan: 6,
+          },
           configuration: {
             configurationType: WidgetConfigurationType.PIE_CHART,
             aggregateFieldMetadataId: companyIdFieldId,
@@ -210,6 +248,13 @@ export const getPageLayoutWidgetDataSeedsV2 = (
           title: 'Contact Roles',
           type: WidgetType.GRAPH,
           gridPosition: { row: 0, column: 0, rowSpan: 4, columnSpan: 6 },
+          position: {
+            layoutMode: PageLayoutTabLayoutMode.GRID,
+            row: 0,
+            column: 0,
+            rowSpan: 4,
+            columnSpan: 6,
+          },
           configuration: {
             configurationType: WidgetConfigurationType.PIE_CHART,
             aggregateFieldMetadataId: personIdFieldId,

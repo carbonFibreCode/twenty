@@ -9,9 +9,11 @@ import { manifestValidate } from '@/cli/utilities/build/manifest/manifest-valida
 const validApplication: ApplicationManifest = {
   universalIdentifier: '4ec0391d-18d5-411c-b2f3-266ddc1c3ef7',
   displayName: 'Test App',
+  description: 'Test app for Twenty',
   defaultRoleUniversalIdentifier: '68bb56f3-8300-4cb5-8cc3-8da9ee66f1b2',
   packageJsonChecksum: '98592af7-4be9-4655-b5c4-9bef307a996c',
   yarnLockChecksum: '580ee05f-15fe-4146-bac2-6c382483c94e',
+  apiClientChecksum: null,
 };
 
 const validField: FieldManifest = {
@@ -31,7 +33,8 @@ const validManifest: Manifest = {
   logicFunctions: [],
   roles: [],
   publicAssets: [],
-  sources: {},
+  views: [],
+  navigationMenuItems: [],
 };
 
 describe('manifestValidate', () => {
@@ -157,6 +160,7 @@ describe('manifestValidate', () => {
             namePlural: 'myObjects',
             labelSingular: 'My Object',
             labelPlural: 'My Objects',
+            labelIdentifierFieldMetadataUniversalIdentifier: sharedId,
             fields: [
               {
                 universalIdentifier: sharedId,

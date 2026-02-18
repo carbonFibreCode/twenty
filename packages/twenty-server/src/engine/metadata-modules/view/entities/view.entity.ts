@@ -12,11 +12,17 @@ import {
   type Relation,
   UpdateDateColumn,
 } from 'typeorm';
+import {
+  AggregateOperations,
+  ViewOpenRecordIn,
+  ViewType,
+  ViewVisibility,
+} from 'twenty-shared/types';
 
-import { AggregateOperations } from 'src/engine/api/graphql/graphql-query-runner/constants/aggregate-operations.constant';
 import { UserWorkspaceEntity } from 'src/engine/core-modules/user-workspace/user-workspace.entity';
 import { FieldMetadataEntity } from 'src/engine/metadata-modules/field-metadata/field-metadata.entity';
 import { ObjectMetadataEntity } from 'src/engine/metadata-modules/object-metadata/object-metadata.entity';
+import { ViewFieldGroupEntity } from 'src/engine/metadata-modules/view-field-group/entities/view-field-group.entity';
 import { ViewFieldEntity } from 'src/engine/metadata-modules/view-field/entities/view-field.entity';
 import { ViewFilterGroupEntity } from 'src/engine/metadata-modules/view-filter-group/entities/view-filter-group.entity';
 import { ViewFilterEntity } from 'src/engine/metadata-modules/view-filter/entities/view-filter.entity';
@@ -24,9 +30,6 @@ import { ViewGroupEntity } from 'src/engine/metadata-modules/view-group/entities
 import { ViewSortEntity } from 'src/engine/metadata-modules/view-sort/entities/view-sort.entity';
 import { ViewCalendarLayout } from 'src/engine/metadata-modules/view/enums/view-calendar-layout.enum';
 import { ViewKey } from 'src/engine/metadata-modules/view/enums/view-key.enum';
-import { ViewOpenRecordIn } from 'src/engine/metadata-modules/view/enums/view-open-record-in';
-import { ViewType } from 'src/engine/metadata-modules/view/enums/view-type.enum';
-import { ViewVisibility } from 'src/engine/metadata-modules/view/enums/view-visibility.enum';
 import { SyncableEntity } from 'src/engine/workspace-manager/types/syncable-entity.interface';
 
 // We could refactor this type to be dynamic to view type
@@ -118,7 +121,7 @@ export class ViewEntity extends SyncableEntity implements Required<ViewEntity> {
     },
   )
   @JoinColumn({ name: 'kanbanAggregateOperationFieldMetadataId' })
-  kanbanAggregateOperationFieldMetadata: Relation<FieldMetadataEntity>;
+  kanbanAggregateOperationFieldMetadata: Relation<FieldMetadataEntity> | null;
 
   @Column({
     type: 'enum',
@@ -140,7 +143,7 @@ export class ViewEntity extends SyncableEntity implements Required<ViewEntity> {
     },
   )
   @JoinColumn({ name: 'calendarFieldMetadataId' })
-  calendarFieldMetadata: Relation<FieldMetadataEntity>;
+  calendarFieldMetadata: Relation<FieldMetadataEntity> | null;
 
   @Column({ nullable: true, type: 'uuid' })
   mainGroupByFieldMetadataId: string | null;
@@ -154,7 +157,7 @@ export class ViewEntity extends SyncableEntity implements Required<ViewEntity> {
     },
   )
   @JoinColumn({ name: 'mainGroupByFieldMetadataId' })
-  mainGroupByFieldMetadata: Relation<FieldMetadataEntity>;
+  mainGroupByFieldMetadata: Relation<FieldMetadataEntity> | null;
 
   @Column({ nullable: false, default: false, type: 'boolean' })
   shouldHideEmptyGroups: boolean;
@@ -190,6 +193,12 @@ export class ViewEntity extends SyncableEntity implements Required<ViewEntity> {
 
   @OneToMany(() => ViewFieldEntity, (viewField) => viewField.view)
   viewFields: Relation<ViewFieldEntity[]>;
+
+  @OneToMany(
+    () => ViewFieldGroupEntity,
+    (viewFieldGroup) => viewFieldGroup.view,
+  )
+  viewFieldGroups: Relation<ViewFieldGroupEntity[]>;
 
   @OneToMany(() => ViewFilterEntity, (viewFilter) => viewFilter.view)
   viewFilters: Relation<ViewFilterEntity[]>;

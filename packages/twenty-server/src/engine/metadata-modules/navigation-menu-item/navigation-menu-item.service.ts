@@ -148,13 +148,20 @@ export class NavigationMenuItemService {
         { workspaceId },
       );
 
-    const { flatNavigationMenuItemMaps: existingFlatNavigationMenuItemMaps } =
-      await this.workspaceManyOrAllFlatEntityMapsCacheService.getOrRecomputeManyOrAllFlatEntityMaps(
-        {
-          workspaceId,
-          flatMapsKeys: ['flatNavigationMenuItemMaps'],
-        },
-      );
+    const {
+      flatNavigationMenuItemMaps: existingFlatNavigationMenuItemMaps,
+      flatObjectMetadataMaps,
+      flatViewMaps,
+    } = await this.workspaceManyOrAllFlatEntityMapsCacheService.getOrRecomputeManyOrAllFlatEntityMaps(
+      {
+        workspaceId,
+        flatMapsKeys: [
+          'flatNavigationMenuItemMaps',
+          'flatObjectMetadataMaps',
+          'flatViewMaps',
+        ],
+      },
+    );
 
     const normalizedInput: CreateNavigationMenuItemInput = {
       ...input,
@@ -168,8 +175,10 @@ export class NavigationMenuItemService {
       fromCreateNavigationMenuItemInputToFlatNavigationMenuItemToCreate({
         createNavigationMenuItemInput: normalizedInput,
         workspaceId,
-        applicationId: workspaceCustomFlatApplication.id,
+        flatApplication: workspaceCustomFlatApplication,
         flatNavigationMenuItemMaps: existingFlatNavigationMenuItemMaps,
+        flatObjectMetadataMaps,
+        flatViewMaps,
       });
 
     const validateAndBuildResult =
@@ -189,7 +198,7 @@ export class NavigationMenuItemService {
         },
       );
 
-    if (isDefined(validateAndBuildResult)) {
+    if (validateAndBuildResult.status === 'fail') {
       throw new WorkspaceMigrationBuilderException(
         validateAndBuildResult,
         'Multiple validation errors occurred while creating navigation menu item',
@@ -278,7 +287,7 @@ export class NavigationMenuItemService {
         },
       );
 
-    if (isDefined(validateAndBuildResult)) {
+    if (validateAndBuildResult.status === 'fail') {
       throw new WorkspaceMigrationBuilderException(
         validateAndBuildResult,
         'Multiple validation errors occurred while updating navigation menu item',
@@ -358,7 +367,7 @@ export class NavigationMenuItemService {
         },
       );
 
-    if (isDefined(validateAndBuildResult)) {
+    if (validateAndBuildResult.status === 'fail') {
       throw new WorkspaceMigrationBuilderException(
         validateAndBuildResult,
         'Multiple validation errors occurred while deleting navigation menu item',
