@@ -402,7 +402,9 @@ export const turnRecordFilterIntoRecordGqlOperationFilter = ({
                   .toPlainDate()
               : Temporal.PlainDate.from(recordFilter.value);
           } catch {
-            return {};
+            throw new Error(
+              `Cannot parse "${recordFilter.value}" for ${filterType} filter`,
+            );
           }
 
           const zonedDateTime = parsedPlainDate.toZonedDateTime(timeZone);
