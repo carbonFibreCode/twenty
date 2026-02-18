@@ -113,6 +113,7 @@ export const useApplyObjectFilterDropdownOperand = () => {
 
         const previousOperand =
           objectFilterDropdownCurrentRecordFilter?.operand;
+
         const isDateTimeOperandFormatChange =
           recordFilterToUpsert.type === 'DATE_TIME' &&
           !filterValueIsEmpty &&
@@ -125,6 +126,7 @@ export const useApplyObjectFilterDropdownOperand = () => {
             recordFilterToUpsert.value,
             newOperand,
             userTimezone,
+            isWholeDayFilterEnabled,
           );
         } else if (filterValueIsEmpty || isStillRelativeFilterValue.success) {
           const zonedDateToUse = Temporal.Now.zonedDateTimeISO(userTimezone);
@@ -169,14 +171,21 @@ const convertDateTimeFilterValue = (
   currentValue: string,
   targetOperand: RecordFilterOperand,
   userTimezone: string,
+  isWholeDayFilterEnabled = false,
 ): string => {
   const zonedDateToUse = Temporal.Now.zonedDateTimeISO(userTimezone);
 
   if (targetOperand === RecordFilterOperand.IS) {
     try {
-      const existingInstant = Temporal.Instant.from(currentValue);
-      const existingZoned = existingInstant.toZonedDateTimeISO(userTimezone);
-      return existingZoned.toPlainDate().toString();
+      const existingZoned = currentValue.includes('T')
+        ? Temporal.Instant.from(currentValue).toZonedDateTimeISO(userTimezone)
+        : Temporal.PlainDate.from(currentValue).toZonedDateTime(userTimezone);
+
+      if (isWholeDayFilterEnabled) {
+        return existingZoned.toPlainDate().toString();
+      } else {
+        return existingZoned.toInstant().toString();
+      }
     } catch {
       return zonedDateToUse.toPlainDate().toString();
     }

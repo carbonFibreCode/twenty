@@ -11,7 +11,6 @@ import { isRecordFilterConsideredEmpty } from '@/object-record/record-filter/uti
 import { useUserTimezone } from '@/ui/input/components/internal/date/hooks/useUserTimezone';
 import { getTimezoneAbbreviationForZonedDateTime } from '@/ui/input/components/internal/date/utils/getTimeZoneAbbreviationForZonedDateTime';
 
-import { useFeatureFlagsMap } from '@/workspace/hooks/useFeatureFlagsMap';
 import { type Nullable } from 'twenty-shared/types';
 import {
   isDefined,
@@ -29,10 +28,6 @@ export const useGetRecordFilterDisplayValue = () => {
 
   const { getFieldMetadataItemByIdOrThrow } =
     useGetFieldMetadataItemByIdOrThrow();
-
-  const featureFlags = useFeatureFlagsMap();
-  const isWholeDayFilterEnabled =
-    featureFlags.IS_DATE_TIME_WHOLE_DAY_FILTER_ENABLED ?? false;
 
   const getRecordFilterDisplayValue = (
     recordFilter?: Nullable<RecordFilter>,
@@ -99,11 +94,11 @@ export const useGetRecordFilterDisplayValue = () => {
             return '';
           }
 
-          const zonedDateTime = isWholeDayFilterEnabled
-            ? Temporal.PlainDate.from(recordFilter.value).toZonedDateTime(
+          const zonedDateTime = recordFilter.value.includes('T')
+            ? Temporal.Instant.from(recordFilter.value).toZonedDateTimeISO(
                 userTimezone,
               )
-            : Temporal.Instant.from(recordFilter.value).toZonedDateTimeISO(
+            : Temporal.PlainDate.from(recordFilter.value).toZonedDateTime(
                 userTimezone,
               );
 
