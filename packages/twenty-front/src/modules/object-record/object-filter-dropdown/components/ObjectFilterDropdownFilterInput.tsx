@@ -1,9 +1,12 @@
+import { ObjectFilterDropdownActorFilterSubFieldTabs } from '@/object-record/object-filter-dropdown/components/ObjectFilterDropdownActorFilterSubFieldTabs';
+import { ObjectFilterDropdownActorSelect } from '@/object-record/object-filter-dropdown/components/ObjectFilterDropdownActorSelect';
 import { ObjectFilterDropdownDateInput } from '@/object-record/object-filter-dropdown/components/ObjectFilterDropdownDateInput';
 import { ObjectFilterDropdownNumberInput } from '@/object-record/object-filter-dropdown/components/ObjectFilterDropdownNumberInput';
 import { ObjectFilterDropdownOptionSelect } from '@/object-record/object-filter-dropdown/components/ObjectFilterDropdownOptionSelect';
 import { ObjectFilterDropdownRatingInput } from '@/object-record/object-filter-dropdown/components/ObjectFilterDropdownRatingInput';
 import { ObjectFilterDropdownRecordSelect } from '@/object-record/object-filter-dropdown/components/ObjectFilterDropdownRecordSelect';
 import { ObjectFilterDropdownSearchInput } from '@/object-record/object-filter-dropdown/components/ObjectFilterDropdownSearchInput';
+import { ObjectFilterDropdownSourceSelect } from '@/object-record/object-filter-dropdown/components/ObjectFilterDropdownSourceSelect';
 import { DropdownMenuSeparator } from '@/ui/layout/dropdown/components/DropdownMenuSeparator';
 import { useFeatureFlagsMap } from '@/workspace/hooks/useFeatureFlagsMap';
 
@@ -17,6 +20,9 @@ import { NUMBER_FILTER_TYPES } from '@/object-record/object-filter-dropdown/cons
 import { TEXT_FILTER_TYPES } from '@/object-record/object-filter-dropdown/constants/TextFilterTypes';
 import { fieldMetadataItemUsedInDropdownComponentSelector } from '@/object-record/object-filter-dropdown/states/fieldMetadataItemUsedInDropdownComponentSelector';
 import { selectedOperandInDropdownComponentState } from '@/object-record/object-filter-dropdown/states/selectedOperandInDropdownComponentState';
+import { subFieldNameUsedInDropdownComponentState } from '@/object-record/object-filter-dropdown/states/subFieldNameUsedInDropdownComponentState';
+import { isFilterOnActorSourceSubField } from '@/object-record/object-filter-dropdown/utils/isFilterOnActorSourceSubField';
+import { isFilterOnActorWorkspaceMemberSubField } from '@/object-record/object-filter-dropdown/utils/isFilterOnActorWorkspaceMemberSubField';
 import { useRecoilComponentValue } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentValue';
 import { getFilterTypeFromFieldType, isDefined } from 'twenty-shared/utils';
 
@@ -39,6 +45,18 @@ export const ObjectFilterDropdownFilterInput = ({
 
   const selectedOperandInDropdown = useRecoilComponentValue(
     selectedOperandInDropdownComponentState,
+  );
+
+  const subFieldNameUsedInDropdown = useRecoilComponentValue(
+    subFieldNameUsedInDropdownComponentState,
+  );
+
+  const isActorSourceFilter = isFilterOnActorSourceSubField(
+    subFieldNameUsedInDropdown,
+  );
+
+  const isActorWorkspaceMemberFilter = isFilterOnActorWorkspaceMemberSubField(
+    subFieldNameUsedInDropdown,
   );
 
   const isOperandWithFilterValue =
@@ -125,7 +143,31 @@ export const ObjectFilterDropdownFilterInput = ({
           </>
         )}
         {filterType === 'ACTOR' && (
-          <ObjectFilterDropdownTextInput filterDropdownId={filterDropdownId} />
+          <>
+            <ObjectFilterDropdownActorFilterSubFieldTabs />
+            <DropdownMenuSeparator />
+            {isActorSourceFilter ? (
+              <>
+                <ObjectFilterDropdownSearchInput />
+                <DropdownMenuSeparator />
+                <ObjectFilterDropdownSourceSelect
+                  dropdownId={filterDropdownId}
+                />
+              </>
+            ) : isActorWorkspaceMemberFilter ? (
+              <>
+                <ObjectFilterDropdownSearchInput />
+                <DropdownMenuSeparator />
+                <ObjectFilterDropdownActorSelect
+                  dropdownId={filterDropdownId}
+                />
+              </>
+            ) : (
+              <ObjectFilterDropdownTextInput
+                filterDropdownId={filterDropdownId}
+              />
+            )}
+          </>
         )}
         {filterType === 'ADDRESS' && (
           <ObjectFilterDropdownTextInput filterDropdownId={filterDropdownId} />
