@@ -1,8 +1,10 @@
 import styled from '@emotion/styled';
 import { t } from '@lingui/core/macro';
 
-import { useApplyObjectFilterDropdownOperand } from '@/object-record/object-filter-dropdown/hooks/useApplyObjectFilterDropdownOperand';
+import { useUpsertObjectFilterDropdownCurrentFilter } from '@/object-record/object-filter-dropdown/hooks/useUpsertObjectFilterDropdownCurrentFilter';
+import { objectFilterDropdownCurrentRecordFilterComponentState } from '@/object-record/object-filter-dropdown/states/objectFilterDropdownCurrentRecordFilterComponentState';
 import { objectFilterDropdownSearchInputComponentState } from '@/object-record/object-filter-dropdown/states/objectFilterDropdownSearchInputComponentState';
+import { selectedOperandInDropdownComponentState } from '@/object-record/object-filter-dropdown/states/selectedOperandInDropdownComponentState';
 import { subFieldNameUsedInDropdownComponentState } from '@/object-record/object-filter-dropdown/states/subFieldNameUsedInDropdownComponentState';
 import { isFilterOnActorSourceSubField } from '@/object-record/object-filter-dropdown/utils/isFilterOnActorSourceSubField';
 import { isFilterOnActorWorkspaceMemberSubField } from '@/object-record/object-filter-dropdown/utils/isFilterOnActorWorkspaceMemberSubField';
@@ -10,6 +12,7 @@ import { RecordFilterOperand } from '@/object-record/record-filter/types/RecordF
 import { type CompositeFieldSubFieldName } from '@/settings/data-model/types/CompositeFieldSubFieldName';
 import { useRecoilComponentValue } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentValue';
 import { useSetRecoilComponentState } from '@/ui/utilities/state/component-state/hooks/useSetRecoilComponentState';
+import { isDefined } from 'twenty-shared/utils';
 
 const StyledTabsContainer = styled.div`
   display: flex;
@@ -49,16 +52,24 @@ export const ObjectFilterDropdownActorFilterSubFieldTabs = () => {
     subFieldNameUsedInDropdownComponentState,
   );
 
+  const objectFilterDropdownCurrentRecordFilter = useRecoilComponentValue(
+    objectFilterDropdownCurrentRecordFilterComponentState,
+  );
+
   const setSubFieldNameUsedInDropdown = useSetRecoilComponentState(
     subFieldNameUsedInDropdownComponentState,
+  );
+
+  const setSelectedOperandInDropdown = useSetRecoilComponentState(
+    selectedOperandInDropdownComponentState,
   );
 
   const setObjectFilterDropdownSearchInput = useSetRecoilComponentState(
     objectFilterDropdownSearchInputComponentState,
   );
 
-  const { applyObjectFilterDropdownOperand } =
-    useApplyObjectFilterDropdownOperand();
+  const { upsertObjectFilterDropdownCurrentFilter } =
+    useUpsertObjectFilterDropdownCurrentFilter();
 
   const actorSubFieldTabs: ActorSubFieldTab[] = [
     {
@@ -88,8 +99,18 @@ export const ObjectFilterDropdownActorFilterSubFieldTabs = () => {
 
   const handleTabClick = (tab: ActorSubFieldTab) => {
     setSubFieldNameUsedInDropdown(tab.subFieldName);
+    setSelectedOperandInDropdown(tab.defaultOperand);
     setObjectFilterDropdownSearchInput('');
-    applyObjectFilterDropdownOperand(tab.defaultOperand);
+
+    if (isDefined(objectFilterDropdownCurrentRecordFilter)) {
+      upsertObjectFilterDropdownCurrentFilter({
+        ...objectFilterDropdownCurrentRecordFilter,
+        subFieldName: tab.subFieldName,
+        operand: tab.defaultOperand,
+        value: '',
+        displayValue: '',
+      });
+    }
   };
 
   return (
