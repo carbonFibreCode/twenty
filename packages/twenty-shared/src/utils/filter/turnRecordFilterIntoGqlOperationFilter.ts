@@ -1219,13 +1219,15 @@ export const turnRecordFilterIntoRecordGqlOperationFilter = ({
         }
       }
 
+      const matchingSourceValues = Object.values(FieldActorSource).filter(
+        (actorSource) =>
+          actorSource
+            .toLowerCase()
+            .includes(recordFilter.value.toLowerCase()),
+      );
+
       switch (recordFilter.operand) {
         case RecordFilterOperand.CONTAINS: {
-          const matchingSourceValues = Object.values(FieldActorSource).filter(
-            (source) =>
-              source.toLowerCase().includes(recordFilter.value.toLowerCase()),
-          );
-
           return {
             or: [
               {
@@ -1250,11 +1252,6 @@ export const turnRecordFilterIntoRecordGqlOperationFilter = ({
           };
         }
         case RecordFilterOperand.DOES_NOT_CONTAIN: {
-          const matchingSourceValues = Object.values(FieldActorSource).filter(
-            (source) =>
-              source.toLowerCase().includes(recordFilter.value.toLowerCase()),
-          );
-
           return {
             and: [
               {
