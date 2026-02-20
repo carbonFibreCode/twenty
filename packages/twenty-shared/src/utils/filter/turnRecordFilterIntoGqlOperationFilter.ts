@@ -1221,9 +1221,7 @@ export const turnRecordFilterIntoRecordGqlOperationFilter = ({
 
       const matchingSourceValues = Object.values(FieldActorSource).filter(
         (actorSource) =>
-          actorSource
-            .toLowerCase()
-            .includes(recordFilter.value.toLowerCase()),
+          actorSource.toLowerCase().includes(recordFilter.value.toLowerCase()),
       );
 
       switch (recordFilter.operand) {
